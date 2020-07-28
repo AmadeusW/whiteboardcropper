@@ -12,16 +12,20 @@ def processImage(image):
 def processImage(image):
     # https://docs.opencv.org/3.4/d7/d4d/tutorial_py_thresholding.html
 
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
     # adaptiveThreshold accepts single channel (grayscale) images
     # 200 works well for the threshold
-    at = cv2.adaptiveThreshold(gray, threshold1, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,11,2)
+    at = cv2.adaptiveThreshold(gray, threshold1, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV,11,2)
 
     # Otsu's binarization
     #blur = cv2.GaussianBlur(gray,(5,5),0)
     #data,otsu = cv2.threshold(blur,threshold1,threshold2,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
 
-    return at
+    # Masking with the thresholds. The two arrays must match, so expand thresholds to RGB
+    mask = cv2.cvtColor(at, cv2.COLOR_GRAY2RGB)
+    masked = cv2.bitwise_and(image, mask)
+
+    return masked
 
 # Helper methods
 def increaseV1():
