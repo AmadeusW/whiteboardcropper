@@ -7,7 +7,13 @@ import numpy as np
 import imutils
 import cv2
 
+Precision = 0.015
+NumCountours = 10
+Canny1 = 30
+Canny2 = 200
+
 def findBoard(image):
+    global Precision, NumCountours, Canny1, Canny2
     # compute the ratio of the old height
     # to the new height, clone it, and resize it
     ratio = image.shape[0] / 300.0
@@ -16,22 +22,22 @@ def findBoard(image):
     # convert the image to grayscale, blur it, and find edges
     # in the image
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    gray = cv2.bilateralFilter(gray, 11, 17, 17)
-    edged = cv2.Canny(gray, 30, 200)
+    gray = cv2.bilateralFilter(gray, 11, 17, 17) # TODO is this needed?
+    edged = cv2.Canny(gray, Canny1, Canny2)
 
     # FIND THE SCREEN
     # find contours in the edged image, keep only the largest
     # ones, and initialize our screen contour
     cnts = cv2.findContours(edged.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     cnts = imutils.grab_contours(cnts)
-    cnts = sorted(cnts, key = cv2.contourArea, reverse = True)[:10]
+    cnts = sorted(cnts, key = cv2.contourArea, reverse = True)[:NumCountours]
     screenCnt = None
 
     # loop over our contours
     for c in cnts:
         # approximate the contour
         peri = cv2.arcLength(c, True)
-        approx = cv2.approxPolyDP(c, 0.015 * peri, True)
+        approx = cv2.approxPolyDP(c, Precision * peri, True)
         # if our approximated contour has four points, then
         # we can assume that we have found our screen
         if len(approx) == 4:
@@ -91,14 +97,40 @@ def warpPerspective(orig, screenCnt, resizeRatio):
     # convert the warped image to grayscale and then adjust
     # the intensity of the pixels to have minimum and maximum
     # values of 0 and 255, respectively
-    # warp = cv2.cvtColor(warp, cv2.COLOR_BGR2GRAY)
     warp = exposure.rescale_intensity(warp, out_range = (0, 1))
 
-    cv2.imshow("image", imutils.resize(orig, height = 300))
-    cv2.imshow("warp", imutils.resize(warp, height = 300))
-    cv2.waitKey(0)
+    return warp
 
+image = cv2.imread("PythonVersion/samples/2.jpg")
+while True:
+    contours, resizeRatio = findBoard(image)
+    result = warpPerspective(image, contours, resizeRatio)
 
-image = cv2.imread("PythonVersion/samples/gameboy.jpg")
-contours, resizeRatio = findBoard(image)
-warpPerspective(image, contours, resizeRatio)
+    cv2.imshow('Whiteboard', result)
+
+    diagnostics = '{},{},{},{}'.format(Precision, NumCountours, Canny1, Canny2)
+    print(diagnostics)
+
+    key = cv2.waitKey(1)
+    if key == 27: # Escape
+        break
+    elif key == ord('w'): 
+        Precision += 0.001
+    elif key == ord('s'): 
+        Precision -= 0.001
+    elif key == ord('d'): 
+        NumCountours += 1
+    elif key == ord('a'): 
+        NumCountours -= 1
+   
+    elif key == ord('w'):
+        Canny1 += 1
+    elif key == ord('S'):
+        Canny1 -= 1
+    elif key == ord('D'):
+        Canny2 += 1
+    elif key == ord('A'):
+        Canny2 -= 1
+
+# release resources
+cv2.destroyAllWindows()
