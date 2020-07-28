@@ -25,7 +25,14 @@ def processImage(image):
     mask = cv2.cvtColor(at, cv2.COLOR_GRAY2RGB)
     masked = cv2.bitwise_and(image, mask)
 
-    return masked
+    # Get the background. Blur it an desaturate it
+    backgroundMask = cv2.bitwise_not(mask)
+    backgroundBlur = cv2.GaussianBlur(image, (15, 15), cv2.BORDER_DEFAULT)
+
+    # Combine background with foreground
+    composite = cv2.bitwise_or(masked, backgroundBlur)
+
+    return composite
 
 # Helper methods
 def increaseV1():
