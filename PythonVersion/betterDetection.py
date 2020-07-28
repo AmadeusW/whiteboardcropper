@@ -13,7 +13,7 @@ Canny1 = 30
 Canny2 = 265
 MinContourThreshold = 100
 
-def getRectFromArray(pts):
+def getRectFromArray(pts, useAxis = True):
     # now that we have our screen contour, we need to determine
     # the top-left, top-right, bottom-right, and bottom-left
     # points so that we can later warp the image -- we'll start
@@ -23,13 +23,19 @@ def getRectFromArray(pts):
     rect = np.zeros((4, 2), dtype = "float32")
     # the top-left point has the smallest sum whereas the
     # bottom-right has the largest sum
-    s = pts.sum(axis = 1)
+    if useAxis:
+        s = pts.sum(axis = 1)
+    else:
+        s = pts.sum()
     rect[0] = pts[np.argmin(s)]
     rect[2] = pts[np.argmax(s)]
     # compute the difference between the points -- the top-right
     # will have the minumum difference and the bottom-left will
     # have the maximum difference
-    diff = np.diff(pts, axis = 1)
+    if useAxis:
+        diff = np.diff(pts, axis = 1)
+    else:
+        diff = np.diff(pts)
     rect[1] = pts[np.argmin(diff)]
     rect[3] = pts[np.argmax(diff)]
 
@@ -73,7 +79,7 @@ def findBoard(image):
             # Check if it is a valid paralelligram OR trapezoid
             # note: top left is origin
             # get vertices of shape
-            rect = getRectFromArray(approx.reshape(4, 2))
+            rect = getRectFromArray(approx.reshape(4, 2), False)
 
             # # Verify if top and bottom edges are parallel
             diffTopY = rect[1][1] - rect[0][1]
@@ -86,8 +92,8 @@ def findBoard(image):
                 diffTopX += 0.1
                 diffBottomX += 0.1
 
-            if diffTopY/diffTopX != diffBottomY/diffBottomX:
-                continue
+            # if diffTopY/diffTopX != diffBottomY/diffBottomX:
+            #     continue
 
             # TODO Also verify that all 4 angles add up to 360
             # angleTopLeft = math.atan()
@@ -102,7 +108,7 @@ def findBoard(image):
 
 def warpPerspective(orig, screenCnt, resizeRatio):
 
-    rect = getRectFromArray(screenCnt.reshape(4, 2))
+    rect = getRectFromArray(screenCnt.reshape(4, 2), True)
     # multiply the rectangle by the original ratio
     rect *= resizeRatio
     # now that we have our rectangle of points, let's compute
