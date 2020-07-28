@@ -101,16 +101,29 @@ def warpPerspective(orig, screenCnt, resizeRatio):
 
     return warp
 
-image = cv2.imread("PythonVersion/samples/2.jpg")
+capture = cv2.VideoCapture(0)
+if not capture.isOpened():
+    print("Cannot open camera")
+    exit()
 while True:
-    contours, resizeRatio = findBoard(image)
-    result = warpPerspective(image, contours, resizeRatio)
+    # get data from camera
+    ret, image = capture.read()
 
-    cv2.imshow('Whiteboard', result)
+    # process data
+    try:
+        contours, resizeRatio = findBoard(image)
+        result = warpPerspective(image, contours, resizeRatio)
 
+        # show result
+        cv2.imshow('Whiteboard', result)
+    except:
+        print("some error occured")
+        
+    # print diagnostics
     diagnostics = '{},{},{},{}'.format(Precision, NumCountours, Canny1, Canny2)
     print(diagnostics)
 
+    # the overly elaborate controls
     key = cv2.waitKey(1)
     if key == 27: # Escape
         break
