@@ -7,10 +7,10 @@ import numpy as np
 import imutils
 import cv2
 
-Precision = 0.015
-NumCountours = 10
+Precision = 0.055
+NumCountours = 170
 Canny1 = 30
-Canny2 = 200
+Canny2 = 265
 
 def findBoard(image):
     global Precision, NumCountours, Canny1, Canny2
@@ -118,7 +118,7 @@ while True:
         cv2.imshow('Whiteboard', result)
     except:
         print("some error occured")
-        
+
     # print diagnostics
     diagnostics = '{},{},{},{}'.format(Precision, NumCountours, Canny1, Canny2)
     print(diagnostics)
