@@ -4,8 +4,8 @@ import numpy as np
 # https://stackoverflow.com/a/45579542/879243
 def processImage(image):
     edges = basicEdgeDetection(image)
-    #return lineDetection(edges, image)
-    return contourDetection(edges, image)
+    return lineDetection(edges, image)
+    #return contourDetection(edges, image)
 
 def lineDetection(edges, image):
     # Now that we've detected edges, find lines
@@ -40,8 +40,8 @@ def contourDetection(edges, image):
 def basicEdgeDetection(image):
     # Basic edge detection
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    blur = cv2.GaussianBlur(gray, (7, 7), 0.5) # TODO: Adjust the parameters; GaussianBlur(gray,(kernel_size, kernel_size),0)
-    edges = cv2.Canny(blur, 0, 50, 3) # TODO: Adjust the thresholds; Canny(blur_gray, low_threshold, high_threshold)
+    blur = cv2.GaussianBlur(gray, (5, 5), 0.5) # TODO: Adjust the parameters; GaussianBlur(gray,(kernel_size, kernel_size),0)
+    edges = cv2.Canny(blur, 10, 90, 3) # TODO: Adjust the thresholds; Canny(blur_gray, low_threshold, high_threshold)
     return edges
 
 # get the image from the video camera
