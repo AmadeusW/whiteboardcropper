@@ -106,7 +106,7 @@ def setCanny(image):
     global BaseCanny1, BaseCanny2
 
     result = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    multiplier = np.mean(result)
+    multiplier = np.mean(result[:][3])
     
     return BaseCanny1 // multiplier, BaseCanny2 // multiplier
 
