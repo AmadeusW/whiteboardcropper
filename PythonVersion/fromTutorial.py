@@ -99,6 +99,6 @@ def warpPerspective(orig, screenCnt, resizeRatio):
     cv2.waitKey(0)
 
 
-image = cv2.imread("C:/Users/t-dagenk/Desktop/WhiteBoard/obs-whiteboard/PythonVersion/samples/gameboy.jpg")
+image = cv2.imread("PythonVersion/samples/gameboy.jpg")
 contours, resizeRatio = findBoard(image)
 warpPerspective(image, contours, resizeRatio)
