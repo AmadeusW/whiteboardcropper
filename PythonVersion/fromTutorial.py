@@ -44,10 +44,9 @@ def findBoard(image):
             screenCnt = approx
             break
     
-    return screenCnt, ratio
-    # cv2.drawContours(image, [screenCnt], -1, (0, 255, 0), 3)
-    # cv2.imshow("Game Boy Screen", image)
-    # cv2.waitKey(0)
+    cv2.drawContours(image, [screenCnt], -1, (0, 255, 0), 3)
+
+    return screenCnt, ratio, image, edged
 
 def warpPerspective(orig, screenCnt, resizeRatio):
     # now that we have our screen contour, we need to determine
@@ -111,13 +110,16 @@ while True:
 
     # process data
     try:
-        contours, resizeRatio = findBoard(image)
+        contours, resizeRatio, annotatedImg, edges = findBoard(image)
         result = warpPerspective(image, contours, resizeRatio)
 
         # show result
-        cv2.imshow('Whiteboard', result)
+        cv2.imshow('Whiteboard: Original Image', imutils.resize(annotatedImg, height = 300))
+        cv2.imshow('Whiteboard: Edges Image', imutils.resize(edges, height = 300))
+        cv2.imshow('Whiteboard: Processed Image', imutils.resize(result, height = 300))
+
     except:
-        print("some error occured")
+        print("Something went wrong")
 
     # print diagnostics
     diagnostics = '{},{},{},{}'.format(Precision, NumCountours, Canny1, Canny2)
