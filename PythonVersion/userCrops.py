@@ -51,7 +51,7 @@ def GoFromImage():
     cv2.destroyAllWindows()
 
 OpenCamera()
-#GoFromImage()
+# GoFromImage()
 
 #############################################################################################
 #TODO
