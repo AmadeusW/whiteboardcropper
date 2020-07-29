@@ -8,35 +8,34 @@ import imutils
 import cv2
 import math 
 
-Precision = 0.055
+# adjustments
+Precision = 0.12
 Canny1 = 30
 Canny2 = 265
 MinContourThreshold = 100
 
-def getRectFromArray(pts):
-    # now that we have our screen contour, we need to determine
-    # the top-left, top-right, bottom-right, and bottom-left
-    # points so that we can later warp the image -- we'll start
-    # by reshaping our contour to be our finals and initializing
-    # our output rectangle in top-left, top-right, bottom-right,
-    # and bottom-left order
-    rect = np.zeros((4, 2), dtype = "float32")
-    # the top-left point has the smallest sum whereas the
-    # bottom-right has the largest sum
-    s = pts.sum(axis = 1)
-    rect[0] = pts[np.argmin(s)]
-    rect[2] = pts[np.argmax(s)]
-    # compute the difference between the points -- the top-right
-    # will have the minumum difference and the bottom-left will
-    # have the maximum difference
-    diff = np.diff(pts, axis = 1)
-    rect[1] = pts[np.argmin(diff)]
-    rect[3] = pts[np.argmax(diff)]
+# to prevent frames with nothing detected
+PrevScreenCnt = None
 
-    return rect
+def getDistanceFromPoint(point, point2 = (0,0)):
+    return math.sqrt((point[0] - point2[0])**2 + (point[1] - point2[1])**2)
+
+def orderPoints(points):
+    sortedList = sorted(points, key=getDistanceFromPoint)
+    target = np.array(sortedList)
+
+    # We can't trust the topRight and bottom left corners as they can flip. This is because we order based on distance from origin.
+    # A slight rotation can therefore cause a difference and they will flip. However this is not the case with the top left and bottom
+    # right corners. Compensate by making sure that the top right corner is the one with the larger x
+    if (target[1][0] < target[2][0]):
+        tmp = target[1]
+        target[1] = target[2]
+        target[2] = tmp
+
+    return target
 
 def findBoard(image):
-    global Precision, MinContourThreshold, Canny1, Canny2
+    global Precision, MinContourThreshold, Canny1, Canny2, PrevScreenCnt
     # compute the ratio of the old height
     # to the new height, clone it, and resize it
     ratio = image.shape[0] / 300.0
@@ -65,44 +64,108 @@ def findBoard(image):
         if (peri < MinContourThreshold):
             continue
 
-        approx = cv2.approxPolyDP(c, Precision * peri, True)
+        approxOutline = cv2.approxPolyDP(c, Precision * peri, True)
         
         # if our approximated contour has four points, then
         # we can assume that we have found our screen
-        if len(approx) == 4:
-            # Check if it is a valid paralelligram OR trapezoid
-            # note: top left is origin
-            # get vertices of shape
-            rect = getRectFromArray(approx.reshape(4, 2))
+        if len(approxOutline) == 4:
 
-            # # Verify if top and bottom edges are parallel
-            diffTopY = rect[1][1] - rect[0][1]
-            diffTopX = rect[1][0] - rect[0][0]
-            diffBottomY = rect[2][1] - rect[3][1]
-            diffBottomX = rect[2][0] - rect[3][0]
+            # flatten approx array (3D --> 2D)
+            approx = approxOutline.ravel()
 
-            # avoid division by zero
-            if diffTopX == 0 or diffBottomX == 0:
-                diffTopX += 0.1
-                diffBottomX += 0.1
+            unsorted_coords = []
 
-            if diffTopY/diffTopX != diffBottomY/diffBottomX:
+            # loop through the approx and extract the coords
+            for i in range(0, len(approx), 2): 
+                x = approx[i] 
+                y = approx[i + 1] 
+
+                unsorted_coords.append((x,y))
+    
+                # for debugging - show coord of each point
+
+                # String containing the co-ordinates. 
+                string = str(x) + " " + str(y)  
+    
+                if(i == 0): 
+                    # text on topmost co-ordinate. 
+                    cv2.putText(image, "Arrow tip", (x, y), 
+                                    cv2.FONT_HERSHEY_COMPLEX , 0.5, (255, 0, 0))  
+                else: 
+                    # text on remaining co-ordinates. 
+                    cv2.putText(image, string, (x, y),  
+                            cv2.FONT_HERSHEY_COMPLEX , 0.5, (0, 255, 0))  
+
+            # the coords are not relative to head but to top left of window. So re-organize them to make it more consistent.
+            # top left becomes first entry and bottom right becomes last entry
+            coords = orderPoints(unsorted_coords)
+
+            # Check if it is a valid trapezoid by checking the angles
+            
+            # get the lengths of each line of the trapezoid
+            topHorizontalLine = getDistanceFromPoint(coords[0], coords[1])
+            bottomHorizontalLine = getDistanceFromPoint(coords[3], coords[2])
+            leftVeritcalLine = getDistanceFromPoint(coords[0], coords[2])
+            rightVerticalLine = getDistanceFromPoint(coords[3], coords[1])
+
+            # this would mean that it is actually a triangle and would cause division by 0
+            if (leftVeritcalLine == 0 or rightVerticalLine == 0):
                 continue
 
-            # TODO Also verify that all 4 angles add up to 360
-            # angleTopLeft = math.atan()
+            # get angles
+            angleTopLeft = math.atan( topHorizontalLine / leftVeritcalLine )
+            angleBottomRight = math.atan( bottomHorizontalLine / rightVerticalLine )
 
-            screenCnt = approx
+            # this would mean that it is actually 2 crossing triangles
+            if (angleTopLeft < 0.1 or angleTopLeft < 0.1):
+                continue
+
+            # for debugging
+            image = cv2.circle(image, (coords[0][0], coords[0][1]), radius=10, color=(0, 0, 255), thickness=-1) # topLeft = red
+            image = cv2.circle(image, (coords[1][0], coords[1][1]), radius=10, color=(0, 255, 0), thickness=-1) # topright = green
+            image = cv2.circle(image, (coords[2][0], coords[2][1]), radius=10, color=(255, 0, 0), thickness=-1) #bottomright = blue
+
+            # reduce the accuracy to 2 digits and compare if the 2 angles add up to 90, 180 or 270 degreees
+            if (int((angleTopLeft + angleBottomRight)*1000) % int(math.pi/2*1000) != 0):
+                continue
+
+            screenCnt = approxOutline
             break
 
-    if (screenCnt is not None and len(screenCnt) > 0):
+    # If we can't find any contours, use the previously found ones. This helps with the jumping
+    if (PrevScreenCnt is not None and screenCnt is None):
+        image = cv2.putText(image, 'Whiteboard Lost. Please recenter your camera', (5,20), cv2.FONT_HERSHEY_PLAIN,1, (200, 255, 200, 255), 1)
+        screenCnt = PrevScreenCnt
+    else:
+        PrevScreenCnt = screenCnt
+
+    # show contours for debugging
+    if (screenCnt is not None):
         cv2.drawContours(image, [screenCnt], -1, (0, 255, 0), 3)
 
     return screenCnt, ratio, image, edged
 
 def warpPerspective(orig, screenCnt, resizeRatio):
+    # now that we have our screen contour, we need to determine
+    # the top-left, top-right, bottom-right, and bottom-left
+    # points so that we can later warp the image -- we'll start
+    # by reshaping our contour to be our finals and initializing
+    # our output rectangle in top-left, top-right, bottom-right,
+    # and bottom-left order
+    pts = screenCnt.reshape(4, 2)
+    rect = np.zeros((4, 2), dtype = "float32")
+    # the top-left point has the smallest sum whereas the
+    # bottom-right has the largest sum
+    s = pts.sum(axis = 1)
+    rect[0] = pts[np.argmin(s)]
+    rect[2] = pts[np.argmax(s)]
+    # compute the difference between the points -- the top-right
+    # will have the minumum difference and the bottom-left will
+    # have the maximum difference
+    diff = np.diff(pts, axis = 1)
+    rect[1] = pts[np.argmin(diff)]
+    rect[3] = pts[np.argmax(diff)]
 
-    rect = getRectFromArray(screenCnt.reshape(4, 2))
     # multiply the rectangle by the original ratio
     rect *= resizeRatio
     # now that we have our rectangle of points, let's compute
@@ -164,7 +227,9 @@ while True:
 
     # the overly elaborate controls
     key = cv2.waitKey(1)
-    if key == 27: # Escape
+    if key == 27: # Escape - pause then when enter is pressed in the console, resume
+        input("Press Enter to continue...")
+    elif key == ord('q'): # exit 
         break
     elif key == ord('w'): 
         Precision += 0.001
