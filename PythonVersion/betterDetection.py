@@ -231,14 +231,16 @@ def enhance(image):
     composite = cv2.add(background, foreground)
     return composite
 
-capture = cv2.VideoCapture(0)
+capture = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+capture.set(cv2.CAP_PROP_FRAME_WIDTH, 2560)
+capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 1440)
+
 if not capture.isOpened():
     print("Cannot open camera")
     exit()
 while True:
     # get data from camera
     ret, image = capture.read()
-
     # process data
     contours, resizeRatio, annotatedImg, edges = findBoard(image)
     
@@ -251,7 +253,7 @@ while True:
         cv2.imshow('Whiteboard: Original Image', imutils.resize(annotatedImg, height = 300))
         cv2.imshow('Whiteboard: Edges Image', imutils.resize(edges, height = 300))
         cv2.imshow('Whiteboard: Cropped Image', imutils.resize(cropped, height = 300))
-        cv2.imshow('Whiteboard: Enhanced Image', imutils.resize(enhanced, height = 300))
+        cv2.imshow('Whiteboard: Enhanced Image', imutils.resize(enhanced, height = 1080))
 
     else:
         print("no suitable contours found")
