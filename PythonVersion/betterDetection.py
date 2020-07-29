@@ -114,8 +114,8 @@ def findBoard(image):
             leftVeritcalLine = getDistanceFromPoint(coords[0], coords[2])
             rightVerticalLine = getDistanceFromPoint(coords[3], coords[1])
 
-            # this would mean that it is actually a triangle and would cause division by 0
-            if (leftVeritcalLine == 0 or rightVerticalLine == 0):
+            # this would mean that it is actually a triangle and could cause division by 0
+            if (leftVeritcalLine < 0.1 or rightVerticalLine < 0.1):
                 print("skipping due to tiny lines")
                 continue
 
@@ -124,21 +124,9 @@ def findBoard(image):
             angleBottomRight = math.atan( bottomHorizontalLine / rightVerticalLine )
 
             # this would mean that it is actually 2 crossing triangles
-            if (angleTopLeft < 0.1 or angleTopLeft < 0.1):
+            if (angleTopLeft < 0.2 or angleTopLeft < 0.2):
                 print("skipping due to tiny angles")
                 continue
-
-            # for debugging
-            image = cv2.circle(image, (coords[0][0], coords[0][1]), radius=10, color=(0, 0, 255), thickness=-1) # topLeft = red
-            image = cv2.circle(image, (coords[1][0], coords[1][1]), radius=10, color=(0, 255, 0), thickness=-1) # topright = green
-            image = cv2.circle(image, (coords[2][0], coords[2][1]), radius=10, color=(255, 0, 0), thickness=-1) #bottomright = blue
-
-            # reduce the accuracy to 2 digits and compare if the 2 angles add up to 90, 180 or 270 degreees
-            # TODO catches everything experiment with the sensitivity
-            
-            # if (int((angleTopLeft + angleBottomRight)*1000) % int(math.pi/2*1000) != 0):
-            #     print("skipping due to incorrect angles")
-            #     continue
 
             screenCnt = approxOutline
             break
@@ -151,8 +139,13 @@ def findBoard(image):
         PrevScreenCnt = screenCnt
 
     # show contours for debugging
-    if (screenCnt is not None):
+    try:
+        image = cv2.circle(image, (coords[0][0], coords[0][1]), radius=10, color=(0, 0, 255), thickness=-1) # topLeft = red
+        image = cv2.circle(image, (coords[1][0], coords[1][1]), radius=10, color=(0, 255, 0), thickness=-1) # topright = green
+        image = cv2.circle(image, (coords[2][0], coords[2][1]), radius=10, color=(255, 0, 0), thickness=-1) #bottomright = blue
         cv2.drawContours(image, [screenCnt], -1, (0, 255, 0), 3)
+    except:
+        print("error getting coords or contours")
 
     return screenCnt, ratio, image, edged
 
