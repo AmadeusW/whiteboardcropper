@@ -263,22 +263,26 @@ while True:
         input("Press Enter to continue...")
     elif key == ord('q'): # exit 
         break
-    elif key == ord('w'): 
-        Precision += 0.001
-    elif key == ord('s'): 
-        Precision -= 0.001
-    # elif key == ord('d'): 
-    #     MinContourThreshold += 1
-    # elif key == ord('a'): 
-    #     MinContourThreshold -= 1
-   
+    elif key == ord('r'): # reset
+        LargestAreaFound = 1000
+        BiggestAreaContours = None
+        BestWarpFound = None
     elif key == ord('w'):
-        Canny1 += 1
+        Precision += 0.001
+    elif key == ord('W'):
+        Precision -= 0.001
+    elif key == ord('s'):
+        MinContourThreshold += 1
     elif key == ord('S'):
-        Canny1 -= 1
-    elif key == ord('D'):
-        Canny2 += 1
+        MinContourThreshold -= 1
+   
+    elif key == ord('a'):
+        Canny1 += 1
     elif key == ord('A'):
+        Canny1 -= 1
+    elif key == ord('d'):
+        Canny2 += 1
+    elif key == ord('D'):
         Canny2 -= 1
 
 # release resources
