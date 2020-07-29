@@ -31,7 +31,7 @@ class ImageWarper:
 
         return target
 
-    def warpPerspective(self, orig, screenCnt, resizeRatio, area):
+    def warpPerspective(self, orig, screenCnt, resizeRatio, area, widthToHeightRatio):
 
         warp = None
 
@@ -66,9 +66,8 @@ class ImageWarper:
             # ...and now for the height of our new image
             heightA = np.sqrt(((tr[0] - br[0]) ** 2) + ((tr[1] - br[1]) ** 2))
             heightB = np.sqrt(((tl[0] - bl[0]) ** 2) + ((tl[1] - bl[1]) ** 2))
-            # take the maximum of the width and height values to reach
-            # our final dimensions
-            maxWidth = max(int(widthA), int(widthB))
+            # take the maximum of the width and height values to reach our final dimensions
+            maxWidth = max(int(widthA * widthToHeightRatio), int(widthB * widthToHeightRatio))
             maxHeight = max(int(heightA), int(heightB))
             # construct our destination points which will be used to
             # map the screen to a top-down, "birds eye" view

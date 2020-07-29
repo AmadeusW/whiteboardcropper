@@ -56,7 +56,8 @@ while True:
 
     if not ShowCalibrationWindow and contours is not None and len(contours) > 0:
         # process the image
-        cropped = imageWarper.warpPerspective(image, contours, resizeRatio, area)
+        widthToHeightRatio = 4/3 # match my whiteboard ratio. TODO: make this an input parameter
+        cropped = imageWarper.warpPerspective(image, contours, resizeRatio, area, widthToHeightRatio)
         annotatedImg = imageEnhancer.enhance(cropped)
 
     cv2.imshow('Whiteboard Cropper', imutils.resize(annotatedImg))
