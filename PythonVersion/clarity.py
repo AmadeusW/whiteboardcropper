@@ -1,8 +1,8 @@
 import cv2
 import numpy as np
 
-threshold1 = 25
-threshold2 = 60
+threshold1 = 0.9
+threshold2 = 0.5
 
 # https://stackoverflow.com/a/45579542/879243
 def processImage(image):
@@ -15,7 +15,7 @@ def processImage(image):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     # adaptiveThreshold accepts single channel (grayscale) images
     # 200 works well for the threshold
-    at = cv2.adaptiveThreshold(gray, 200, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV,21,2)
+    at = cv2.adaptiveThreshold(gray, 200, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV,9,2)
     # Alternatively, use edge detection
     #blur = cv2.GaussianBlur(gray,(5,5),0)
     #edges = cv2.Canny(gray, threshold1, threshold2, 3) # 10, 90
@@ -24,43 +24,43 @@ def processImage(image):
     #blur = cv2.GaussianBlur(gray,(5,5),0)
     #data,otsu = cv2.threshold(blur,threshold1,threshold2,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
 
-    # Masking with the thresholds. The two arrays must match, so expand thresholds to 3 channels
-    mask = cv2.cvtColor(at, cv2.COLOR_GRAY2BGR)
-    # Blur the mask to reduce artifacts
-    masked = cv2.bitwise_and(image, mask)
-    maskedBlurred = cv2.GaussianBlur(masked,(5,5),0)
-    # combine masked with maskedBlurred for more clarity
-    foreground = cv2.addWeighted(masked, 0.5, maskedBlurred, 0.5, 0)
+    foreground = cv2.bitwise_and(image, image, mask=at)
 
     # Get the background. Blur it an desaturate it
-    #backgroundMask = cv2.bitwise_not(mask)
     backgroundBlur = cv2.GaussianBlur(image, (15, 15), cv2.BORDER_DEFAULT)
+    amplifiedLight = 0.9
+    addedGamma = 0.5
+    # Make the background brighter prior to multiplication
+    # Values 0.0, 0.9 and 0.5 (=128) seem to do well
+    washedOut = cv2.addWeighted(backgroundBlur, 0.0, backgroundBlur, amplifiedLight, addedGamma*255)
+    # remove the area taken care of by the edge detector
+    # I can't figure out why, but we can't use mask=bitwise_not(at) like above.
+    # BTW we convert to BGR is that the two arrays for bitwise_and must match number of channels
+    mask = cv2.cvtColor(at, cv2.COLOR_GRAY2BGR)
+    backgroundMask = cv2.bitwise_not(mask)
+    background = cv2.bitwise_and(washedOut, backgroundMask)
 
     # Combine background with foreground
-    composite = cv2.addWeighted(foreground, 1.0, backgroundBlur, 0.5, 0)
-
-    # diagnostic
-    #weighted = cv2.addWeighted(image, threshold1, backgroundMask, threshold2, 0)
-
+    composite = cv2.add(background, foreground)
     return composite
 
 # Helper methods
 def increaseV1():
     global threshold1
-    if threshold1 <= 250:
-        threshold1 += 5
+    if threshold1 <= 0.9:
+        threshold1 += 0.1
 def decreaseV1():
     global threshold1
-    if threshold1 >= 5:
-        threshold1 -= 5
+    if threshold1 >= 0.1:
+        threshold1 -= 0.1
 def increaseV2():
     global threshold2
-    if threshold2 <= 250:
-        threshold2 += 2
+    if threshold2 <= 0.9:
+        threshold2 += 0.1
 def decreaseV2():
     global threshold2
-    if threshold2 >= 5:
-        threshold2 -= 5
+    if threshold2 >= 0.1:
+        threshold2 -= 0.1
 
 # Main code
 # get the image from the video camera
