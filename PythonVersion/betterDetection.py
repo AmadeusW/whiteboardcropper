@@ -23,35 +23,16 @@ def getDistanceFromPoint(point, point2 = (0,0)):
 def orderPoints(points):
     sortedList = sorted(points, key=getDistanceFromPoint)
     target = np.array(sortedList)
+
+    # We can't trust the topRight and bottom left corners as they can flip. This is because we order based on distance from origin.
+    # A slight rotation can therefore cause a difference and they will flip. However this is not the case with the top left and bottom
+    # right corners. Compensate by making sure that the top right corner is the one with the larger x
+    if (target[1][0] < target[2][0]):
+        tmp = target[1]
+        target[1] = target[2]
+        target[2] = tmp
+
     return target
-
-def getRectFromArray(pts, useAxis = True):
-    # now that we have our screen contour, we need to determine
-    # the top-left, top-right, bottom-right, and bottom-left
-    # points so that we can later warp the image -- we'll start
-    # by reshaping our contour to be our finals and initializing
-    # our output rectangle in top-left, top-right, bottom-right,
-    # and bottom-left order
-    rect = np.zeros((4, 2), dtype = "float32")
-    # the top-left point has the smallest sum whereas the
-    # bottom-right has the largest sum
-    if useAxis:
-        s = pts.sum(axis = 1)
-    else:
-        s = pts.sum()
-    rect[0] = pts[np.argmin(s)]
-    rect[2] = pts[np.argmax(s)]
-    # compute the difference between the points -- the top-right
-    # will have the minumum difference and the bottom-left will
-    # have the maximum difference
-    if useAxis:
-        diff = np.diff(pts, axis = 1)
-    else:
-        diff = np.diff(pts)
-    rect[1] = pts[np.argmin(diff)]
-    rect[3] = pts[np.argmax(diff)]
-
-    return rect
 
 def findBoard(image):
     global Precision, MinContourThreshold, Canny1, Canny2, PrevScreenCnt
@@ -95,42 +76,29 @@ def findBoard(image):
             unsorted_coords = []
 
             # loop through the approx and extract the coords
-            i = 0
-            for j in approx : 
-                if(i % 2 == 0): 
-                    x = approx[i] 
-                    y = approx[i + 1] 
+            for i in range(0, len(approx), 2): 
+                x = approx[i] 
+                y = approx[i + 1] 
 
-                    unsorted_coords.append((x,y))
-        
-                    # for debugging - show coord of each point
+                unsorted_coords.append((x,y))
+    
+                # for debugging - show coord of each point
 
-                    # String containing the co-ordinates. 
-                    string = str(x) + " " + str(y)  
-        
-                    if(i == 0): 
-                        # text on topmost co-ordinate. 
-                        cv2.putText(image, "Arrow tip", (x, y), 
-                                        cv2.FONT_HERSHEY_COMPLEX , 0.5, (255, 0, 0))  
-                    else: 
-                        # text on remaining co-ordinates. 
-                        cv2.putText(image, string, (x, y),  
-                                cv2.FONT_HERSHEY_COMPLEX , 0.5, (0, 255, 0))  
-                i += 1
+                # String containing the co-ordinates. 
+                string = str(x) + " " + str(y)  
+    
+                if(i == 0): 
+                    # text on topmost co-ordinate. 
+                    cv2.putText(image, "Arrow tip", (x, y), 
+                                    cv2.FONT_HERSHEY_COMPLEX , 0.5, (255, 0, 0))  
+                else: 
+                    # text on remaining co-ordinates. 
+                    cv2.putText(image, string, (x, y),  
+                            cv2.FONT_HERSHEY_COMPLEX , 0.5, (0, 255, 0))  
 
             # the coords are not relative to head but to top left of window. So re-organize them to make it more consistent.
             # top left becomes first entry and bottom right becomes last entry
             coords = orderPoints(unsorted_coords)
-
-            # We can't trust the topRight and bottom left corners as they can flip. This is because we order based on distance from origin.
-            # A slight rotation can therefore cause a difference and they will flip. However this is not the case with the top left and bottom
-            # right corners. Compensate by making sure that the top right corner is the one with the larger x
-            # TODO move this into the sorting function
-            if (coords[1][0] < coords[2][0]):
-                tmp = coords[1]
-                coords[1] = coords[2]
-                coords[2] = tmp
-
 
             # Check if it is a valid trapezoid by checking the angles
             
@@ -147,6 +115,10 @@ def findBoard(image):
             # get angles
             angleTopLeft = math.atan( topHorizontalLine / leftVeritcalLine )
             angleBottomRight = math.atan( bottomHorizontalLine / rightVerticalLine )
+
+            # this would mean that it is actually 2 crossing triangles
+            if (angleTopLeft < 0.1 or angleTopLeft < 0.1):
+                continue
 
             # for debugging
             image = cv2.putText(image, '{},{}'.format(angleTopLeft, angleBottomRight), (5,20), cv2.FONT_HERSHEY_PLAIN,1, (200, 255, 200, 255), 1)
@@ -174,8 +146,26 @@ def findBoard(image):
     return screenCnt, ratio, image, edged
 
 def warpPerspective(orig, screenCnt, resizeRatio):
+    # now that we have our screen contour, we need to determine
+    # the top-left, top-right, bottom-right, and bottom-left
+    # points so that we can later warp the image -- we'll start
+    # by reshaping our contour to be our finals and initializing
+    # our output rectangle in top-left, top-right, bottom-right,
+    # and bottom-left order
+    pts = screenCnt.reshape(4, 2)
+    rect = np.zeros((4, 2), dtype = "float32")
+    # the top-left point has the smallest sum whereas the
+    # bottom-right has the largest sum
+    s = pts.sum(axis = 1)
+    rect[0] = pts[np.argmin(s)]
+    rect[2] = pts[np.argmax(s)]
+    # compute the difference between the points -- the top-right
+    # will have the minumum difference and the bottom-left will
+    # have the maximum difference
+    diff = np.diff(pts, axis = 1)
+    rect[1] = pts[np.argmin(diff)]
+    rect[3] = pts[np.argmax(diff)]
 
-    rect = getRectFromArray(screenCnt.reshape(4, 2), True)
     # multiply the rectangle by the original ratio
     rect *= resizeRatio
     # now that we have our rectangle of points, let's compute
@@ -237,7 +227,9 @@ while True:
 
     # the overly elaborate controls
     key = cv2.waitKey(1)
-    if key == 27: # Escape
+    if key == 27: # Escape - pause then when enter is pressed in the console, resume
+        input("Press Enter to continue...")
+    elif key == ord('q'): # exit 
         break
     elif key == ord('w'): 
         Precision += 0.001
