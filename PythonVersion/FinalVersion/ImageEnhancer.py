@@ -22,11 +22,11 @@ class ImageEnhancer:
         #backgroundBlur = cv2.bilateralFilter(image, 5, TestValue, TestValue)
         backgroundBlur = image # don't do any smoothing of the background
 
-        amplifiedLight = 0.9
-        addedGamma = 0.5
+        amplifiedLight = 0.3
+        addedGamma = 0.2
         # Make the background brighter prior to multiplication
         # Values 0.0, 0.9 and 0.5 (=128) seem to do well
-        washedOut = cv2.addWeighted(backgroundBlur, 0.0, backgroundBlur, amplifiedLight, addedGamma*255)
+        washedOut = cv2.addWeighted(backgroundBlur, 1.0, backgroundBlur, amplifiedLight, addedGamma*255)
         # remove the area taken care of by the edge detector
         # I can't figure out why, but we can't use mask=bitwise_not(at) like above.
         # BTW we convert to BGR is that the two arrays for bitwise_and must match number of channels
