@@ -1,8 +1,8 @@
 import cv2
 import numpy as np
 
-threshold1 = 0.9
-threshold2 = 0.5
+threshold1 = 198
+threshold2 = 3
 
 # https://stackoverflow.com/a/45579542/879243
 def processImage(image):
@@ -14,8 +14,8 @@ def processImage(image):
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     # adaptiveThreshold accepts single channel (grayscale) images
-    # 200 works well for the threshold
-    at = cv2.adaptiveThreshold(gray, 200, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV,9,2)
+    # Good values are 198 for the threshold, and a low blockSize, e.g. 3
+    at = cv2.adaptiveThreshold(gray, 198, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV,3,2)
     # Alternatively, use edge detection
     #blur = cv2.GaussianBlur(gray,(5,5),0)
     #edges = cv2.Canny(gray, threshold1, threshold2, 3) # 10, 90
@@ -47,20 +47,20 @@ def processImage(image):
 # Helper methods
 def increaseV1():
     global threshold1
-    if threshold1 <= 0.9:
-        threshold1 += 0.1
+    if threshold1 <= 250:
+        threshold1 += 5
 def decreaseV1():
     global threshold1
-    if threshold1 >= 0.1:
-        threshold1 -= 0.1
+    if threshold1 >= 5:
+        threshold1 -= 2
 def increaseV2():
     global threshold2
-    if threshold2 <= 0.9:
-        threshold2 += 0.1
+    if threshold2 <= 31:
+        threshold2 += 2
 def decreaseV2():
     global threshold2
-    if threshold2 >= 0.1:
-        threshold2 -= 0.1
+    if threshold2 >= 5:
+        threshold2 -= 2
 
 # Main code
 # get the image from the video camera
