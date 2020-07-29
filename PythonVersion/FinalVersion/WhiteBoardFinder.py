@@ -38,6 +38,9 @@ class WhiteBoardFinder:
         screenCnt = None
         area = None
 
+        # Use cached contours, if any
+        screenCnt = self.biggestAreaContours
+
         # loop over our contours WHICH ARE NOW SORTED IN ORDER FROM BIGGEST DOWN
         for c in cnts:
             # approximate the contour
@@ -48,10 +51,9 @@ class WhiteBoardFinder:
             if (area < self.largestAreaFound-100):
                 continue
             
-            # If it is the largest go with it
-            elif (self.biggestAreaContours is not None and area == self.largestAreaFound):
-                screenCnt = BiggestAreaContours
-                break
+            # This area is smaller than previously cached one, don't use it
+            elif (area < self.largestAreaFound):
+                continue
 
             approxOutline = cv2.approxPolyDP(c, self.precision * peri, True)
 
@@ -60,9 +62,9 @@ class WhiteBoardFinder:
             # processing if needed
             if len(approxOutline) >= 4:
                 
-                # if we made it this far it is a good contour and so we can save it
-                LargestAreaFound = area
-                BiggestAreaContours = approxOutline
+                # qcif we made it this far it is a good contour and so we can save it
+                self.largestAreaFound = area
+                self.biggestAreaContours = approxOutline
 
                 screenCnt = approxOutline
                 break

@@ -39,7 +39,6 @@ imageWarper = ImageWarper(whiteBoardFinder)
 imageEnhancer = ImageEnhancer()
 
 # start the camera
-capture = cv2.VideoCapture(0)
 capture = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 capture.set(cv2.CAP_PROP_FRAME_WIDTH, 2560)
 capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 1440)
@@ -60,7 +59,7 @@ while True:
         cropped = imageWarper.warpPerspective(image, contours, resizeRatio, area)
         annotatedImg = imageEnhancer.enhance(cropped)
 
-    cv2.imshow('Whiteboard Cropper', imutils.resize(annotatedImg, height = 300))
+    cv2.imshow('Whiteboard Cropper', imutils.resize(annotatedImg))
 
     # the overly elaborate controls
     key = cv2.waitKey(1)

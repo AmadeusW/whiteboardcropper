@@ -85,7 +85,7 @@ class ImageWarper:
 
             self.bestWarpFound = warp
         else:
-            warp = self.estWarpFound
+            warp = self.bestWarpFound
         # convert the warped image to grayscale and then adjust
         # the intensity of the pixels to have minimum and maximum
         # values of 0 and 255, respectively
