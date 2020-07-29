@@ -12,6 +12,7 @@ import math
 Precision = 0.12
 Canny1 = 30
 Canny2 = 265
+TestValue = 150
 
 # For frame retention between frames
 LargestAreaFound = 1000
@@ -65,7 +66,7 @@ def findBoard(image):
 
         # There is no way a tiny board can happen so limit min size
         if (area < LargestAreaFound-100):
-            print("area too small")
+            #print("area too small")
             continue
         
         # If it is the largest go with it
@@ -206,7 +207,10 @@ def enhance(image):
     foreground = cv2.bitwise_and(image, image, mask=at)
 
     # Get the background. Blur it an desaturate it
-    backgroundBlur = cv2.GaussianBlur(image, (15, 15), cv2.BORDER_DEFAULT)
+    #backgroundBlur = cv2.GaussianBlur(image, (15, 15), cv2.BORDER_DEFAULT)
+    #backgroundBlur = cv2.bilateralFilter(image, 5, TestValue, TestValue)
+    backgroundBlur = image # don't do any smoothing of the background
+
     amplifiedLight = 0.9
     addedGamma = 0.5
     # Make the background brighter prior to multiplication
@@ -254,8 +258,8 @@ while True:
         print("no suitable contours found")
 
     # # print diagnostics
-    # diagnostics = '{},{},{},{}'.format(Precision, B, Canny1, Canny2)
-    # print(diagnostics)
+    diagnostics = '{},{},{},{}'.format(Precision, Canny1, Canny2, TestValue)
+    print(diagnostics)
 
     # the overly elaborate controls
     key = cv2.waitKey(1)
@@ -272,9 +276,9 @@ while True:
     elif key == ord('W'):
         Precision -= 0.001
     elif key == ord('s'):
-        MinContourThreshold += 1
+        TestValue += 5
     elif key == ord('S'):
-        MinContourThreshold -= 1
+        TestValue -= 5
    
     elif key == ord('a'):
         Canny1 += 1
