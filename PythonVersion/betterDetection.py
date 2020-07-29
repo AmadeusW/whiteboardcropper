@@ -28,7 +28,7 @@ def orderPoints(points):
     # A slight rotation can therefore cause a difference and they will flip. However this is not the case with the top left and bottom
     # right corners. Compensate by making sure that the top right corner is the one with the larger x
     if (target[1][0] < target[2][0]):
-        tmp = target[1]
+        tmp = [target[1][0], target[1][1]] # done this way to pass actual value instead of reference
         target[1] = target[2]
         target[2] = tmp
 
@@ -96,11 +96,17 @@ def findBoard(image):
                     cv2.putText(image, string, (x, y),  
                             cv2.FONT_HERSHEY_COMPLEX , 0.5, (0, 255, 0))  
 
+            # Check if it is a valid trapezoid by checking the angles
+
             # the coords are not relative to head but to top left of window. So re-organize them to make it more consistent.
             # top left becomes first entry and bottom right becomes last entry
             coords = orderPoints(unsorted_coords)
 
-            # Check if it is a valid trapezoid by checking the angles
+            # if the top right and bottom left corners overlap, we skip this contour as it is a triangle
+            # TODO experiment with the sensitivity
+            if (coords[1][0] == coords[2][0] and coords[1][1] == coords[2][1]):
+                print("skipping due to overlap")
+                continue
             
             # get the lengths of each line of the trapezoid
             topHorizontalLine = getDistanceFromPoint(coords[0], coords[1])
@@ -110,6 +116,7 @@ def findBoard(image):
 
             # this would mean that it is actually a triangle and would cause division by 0
             if (leftVeritcalLine == 0 or rightVerticalLine == 0):
+                print("skipping due to tiny lines")
                 continue
 
             # get angles
@@ -118,6 +125,7 @@ def findBoard(image):
 
             # this would mean that it is actually 2 crossing triangles
             if (angleTopLeft < 0.1 or angleTopLeft < 0.1):
+                print("skipping due to tiny angles")
                 continue
 
             # for debugging
@@ -126,8 +134,11 @@ def findBoard(image):
             image = cv2.circle(image, (coords[2][0], coords[2][1]), radius=10, color=(255, 0, 0), thickness=-1) #bottomright = blue
 
             # reduce the accuracy to 2 digits and compare if the 2 angles add up to 90, 180 or 270 degreees
-            if (int((angleTopLeft + angleBottomRight)*1000) % int(math.pi/2*1000) != 0):
-                continue
+            # TODO catches everything experiment with the sensitivity
+            
+            # if (int((angleTopLeft + angleBottomRight)*1000) % int(math.pi/2*1000) != 0):
+            #     print("skipping due to incorrect angles")
+            #     continue
 
             screenCnt = approxOutline
             break
