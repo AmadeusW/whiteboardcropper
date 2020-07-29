@@ -46,7 +46,7 @@ def findBoard(image):
     # convert the image to grayscale, blur it, and find edges
     # in the image
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    gray = cv2.bilateralFilter(gray, 11, 17, 17)
+    gray = cv2.bilateralFilter(gray, 5, 17, 17)
     edged = cv2.Canny(gray, Canny1, Canny2)
 
     # FIND THE SCREEN
