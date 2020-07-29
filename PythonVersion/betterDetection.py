@@ -121,7 +121,6 @@ def findBoard(image):
                 continue
 
             # for debugging
-            image = cv2.putText(image, '{},{}'.format(angleTopLeft, angleBottomRight), (5,20), cv2.FONT_HERSHEY_PLAIN,1, (200, 255, 200, 255), 1)
             image = cv2.circle(image, (coords[0][0], coords[0][1]), radius=10, color=(0, 0, 255), thickness=-1) # topLeft = red
             image = cv2.circle(image, (coords[1][0], coords[1][1]), radius=10, color=(0, 255, 0), thickness=-1) # topright = green
             image = cv2.circle(image, (coords[2][0], coords[2][1]), radius=10, color=(255, 0, 0), thickness=-1) #bottomright = blue
@@ -135,6 +134,7 @@ def findBoard(image):
 
     # If we can't find any contours, use the previously found ones. This helps with the jumping
     if (PrevScreenCnt is not None and screenCnt is None):
+        image = cv2.putText(image, 'Whiteboard Lost. Please recenter your camera', (5,20), cv2.FONT_HERSHEY_PLAIN,1, (200, 255, 200, 255), 1)
         screenCnt = PrevScreenCnt
     else:
         PrevScreenCnt = screenCnt
