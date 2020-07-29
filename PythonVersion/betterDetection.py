@@ -9,7 +9,7 @@ import cv2
 import math 
 
 # adjustments
-Precision = 0.055
+Precision = 0.12
 Canny1 = 30
 Canny2 = 265
 MinContourThreshold = 100
