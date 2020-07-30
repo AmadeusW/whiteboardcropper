@@ -11,4 +11,6 @@ This project is an OpenCV pipeline for detecting a whiteboard, aligning it and e
 ## How to run
 `python .\WhiteBoardCropper.py`
 
-You'll need to `pip install opencv-python` and a few other dependencies as indicated by error messages.
+You'll need to download the dependencies via `pip install opencv-python scikit-image imutils numpy` 
+
+**Note:** this project does not run on MacOS
